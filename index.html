@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมคำนวณสูตรแม่ปุ๋ยเดี่ยว (N-P-K)</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --primary: #2e7d32;
+            --primary-light: #e8f5e9;
+            --text: #2c3e50;
+            --border: #dcdfe6;
+            --danger: #d32f2f;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin: 12px 0 8px 0;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary);
+        }
+
+        .presets {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            background: #eee;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .preset-btn:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .mode-toggle {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .result-box {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 16px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .val-highlight {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.05rem;
+        }
+
+        .sub-text {
+            font-size: 0.8rem;
+            color: #777;
+        }
+
+        .pure-notice {
+            background: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 10px;
+            font-size: 0.82rem;
+            border-radius: 4px;
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 6px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>คำนวณแม่ปุ๋ยเดี่ยว (N-P-K)</h1>
+
+    <div class="section-title">สูตรปุ๋ยเป้าหมาย</div>
+    <div class="grid-3">
+        <div class="input-group">
+            <label>N (%)</label>
+            <input type="number" id="targetN" value="15" step="0.1" oninput="calculate()">
+        </div>
+        <div class="input-group">
+            <label>P (%)</label>
+            <input type="number" id="targetP" value="6" step="0.1" oninput="calculate()">
+        </div>
+        <div class="input-group">
+            <label>K (%)</label>
+            <input type="number" id="targetK" value="26" step="0.1" oninput="calculate()">
+        </div>
+    </div>
+
+    <div class="presets">
+        <button class="preset-btn" onclick="setPreset(15, 6, 26)">15-6-26</button>
+        <button class="preset-btn" onclick="setPreset(14, 7, 35)">14-7-35</button>
+        <button class="preset-btn" onclick="setPreset(15, 10, 30)">15-10-30</button>
+        <button class="preset-btn" onclick="setPreset(15, 15, 15)">15-15-15</button>
+    </div>
+
+    <div class="section-title">โหมดการคำนวณ</div>
+    <div class="mode-toggle">
+        <button id="btnModeTrees" class="mode-btn active" onclick="switchMode('trees')">คำนวณตามจำนวนต้น</button>
+        <button id="btnModeBatch" class="mode-btn" onclick="switchMode('batch')">คำนวณตามน้ำหนักรวม</button>
+    </div>
+
+    <div id="wrapperTrees" class="grid-2">
+        <div class="input-group">
+            <label>จำนวนต้น (ต้น)</label>
+            <input type="number" id="treeCount" value="250" oninput="calculate()">
+        </div>
+        <div class="input-group">
+            <label>อัตราใส่ปุ๋ยสำเร็จ (กก./ต้น)</label>
+            <input type="number" id="ratePerTree" value="2.0" step="0.1" oninput="calculate()">
+        </div>
+    </div>
+
+    <div id="wrapperBatch" class="input-group" style="display: none;">
+        <label>น้ำหนักปุ๋ยสำเร็จเป้าหมาย (กก.)</label>
+        <input type="number" id="batchWeight" value="500" oninput="calculate()">
+    </div>
+
+    <div id="errorMsg" class="error-msg">ฟอสฟอรัสสูงเกินไป DAP ให้ไนโตรเจนเกินสูตรเป้าหมาย</div>
+
+    <div class="result-box">
+        <div class="section-title" style="margin-top:0;">แม่ปุ๋ยที่ต้องใช้</div>
+        
+        <div class="result-item">
+            <div>
+                <div>46-0-0 (ยูเรีย)</div>
+                <div class="sub-text" id="bagsUrea">0 กระสอบ</div>
+            </div>
+            <div class="val-highlight" id="weightUrea">0.00 กก.</div>
+        </div>
+
+        <div class="result-item">
+            <div>
+                <div>18-46-0 (DAP)</div>
+                <div class="sub-text" id="bagsDAP">0 กระสอบ</div>
+            </div>
+            <div class="val-highlight" id="weightDAP">0.00 กก.</div>
+        </div>
+
+        <div class="result-item">
+            <div>
+                <div>0-0-60 (ม็อบ)</div>
+                <div class="sub-text" id="bagsMOP">0 กระสอบ</div>
+            </div>
+            <div class="val-highlight" id="weightMOP">0.00 กก.</div>
+        </div>
+
+        <div class="result-item">
+            <div>
+                <div>รวมน้ำหนักแม่ปุ๋ยแท้</div>
+                <div class="sub-text">ไม่ต้องแบกสารเติมเต็ม (ฟิลเลอร์)</div>
+            </div>
+            <div class="val-highlight" style="color:#000;" id="totalRawWeight">0.00 กก.</div>
+        </div>
+
+        <div id="perTreeResult" class="result-item" style="display: flex;">
+            <div>
+                <div>อัตราหว่านแม่ปุ๋ยแท้จริง</div>
+                <div class="sub-text">หว่านอัตรานี้จะได้ธาตุอาหารครบตามสูตร</div>
+            </div>
+            <div class="val-highlight" style="color:#e65100;" id="realRatePerTree">0.00 กก./ต้น</div>
+        </div>
+    </div>
+
+    <div class="pure-notice">
+        <b>หลักการใช้แม่ปุ๋ยเดี่ยว:</b> หว่านตาม <b>"อัตราหว่านแม่ปุ๋ยแท้จริง"</b> ได้ทันที ไม่ต้องเติมดินขาวหรือทรายเพื่อเพิ่มน้ำหนักให้เต็มพิกัด และควรผสมแล้วหว่านทันทีในขณะที่ดินมีความชื้น ห้ามคลุกทิ้งไว้ข้ามคืน
+    </div>
+</div>
+
+<script>
+    let currentMode = 'trees';
+
+    function switchMode(mode) {
+        currentMode = mode;
+        const btnTrees = document.getElementById('btnModeTrees');
+        const btnBatch = document.getElementById('btnModeBatch');
+        const wrapTrees = document.getElementById('wrapperTrees');
+        const wrapBatch = document.getElementById('wrapperBatch');
+        const perTreeResult = document.getElementById('perTreeResult');
+
+        if (mode === 'trees') {
+            btnTrees.classList.add('active');
+            btnBatch.classList.remove('active');
+            wrapTrees.style.display = 'grid';
+            wrapBatch.style.display = 'none';
+            perTreeResult.style.display = 'flex';
+        } else {
+            btnBatch.classList.add('active');
+            btnTrees.classList.remove('active');
+            wrapBatch.style.display = 'flex';
+            wrapTrees.style.display = 'none';
+            perTreeResult.style.display = 'none';
+        }
+        calculate();
+    }
+
+    function setPreset(n, p, k) {
+        document.getElementById('targetN').value = n;
+        document.getElementById('targetP').value = p;
+        document.getElementById('targetK').value = k;
+        calculate();
+    }
+
+    function calculate() {
+        const N = parseFloat(document.getElementById('targetN').value) || 0;
+        const P = parseFloat(document.getElementById('targetP').value) || 0;
+        const K = parseFloat(document.getElementById('targetK').value) || 0;
+
+        let totalTargetWeight = 0;
+        let treeCount = 1;
+
+        if (currentMode === 'trees') {
+            treeCount = parseFloat(document.getElementById('treeCount').value) || 0;
+            const rate = parseFloat(document.getElementById('ratePerTree').value) || 0;
+            totalTargetWeight = treeCount * rate;
+        } else {
+            totalTargetWeight = parseFloat(document.getElementById('batchWeight').value) || 0;
+        }
+
+        // คำนวณสารอาหารบริสุทธิ์ที่ต้องการ (กก.)
+        const reqN = (N / 100) * totalTargetWeight;
+        const reqP = (P / 100) * totalTargetWeight;
+        const reqK = (K / 100) * totalTargetWeight;
+
+        // คำนวณแม่ปุ๋ย 0-0-60
+        const mopWeight = reqK / 0.60;
+
+        // คำนวณแม่ปุ๋ย 18-46-0 (DAP)
+        const dapWeight = reqP / 0.46;
+        const nFromDap = dapWeight * 0.18;
+
+        // คำนวณแม่ปุ๋ย 46-0-0 (Urea)
+        const nRemaining = reqN - nFromDap;
+        const errorMsg = document.getElementById('errorMsg');
+
+        let ureaWeight = 0;
+        if (nRemaining < -0.01) {
+            errorMsg.style.display = 'block';
+            ureaWeight = 0;
+        } else {
+            errorMsg.style.display = 'none';
+            ureaWeight = nRemaining / 0.46;
+        }
+
+        const totalRaw = ureaWeight + dapWeight + mopWeight;
+
+        // อัปเดตผลลัพธ์
+        document.getElementById('weightUrea').innerText = ureaWeight.toFixed(2) + ' กก.';
+        document.getElementById('bagsUrea').innerText = (ureaWeight / 50).toFixed(2) + ' กระสอบ (50 กก.)';
+
+        document.getElementById('weightDAP').innerText = dapWeight.toFixed(2) + ' กก.';
+        document.getElementById('bagsDAP').innerText = (dapWeight / 50).toFixed(2) + ' กระสอบ (50 กก.)';
+
+        document.getElementById('weightMOP').innerText = mopWeight.toFixed(2) + ' กก.';
+        document.getElementById('bagsMOP').innerText = (mopWeight / 50).toFixed(2) + ' กระสอบ (50 กก.)';
+
+        document.getElementById('totalRawWeight').innerText = totalRaw.toFixed(2) + ' กก.';
+
+        if (currentMode === 'trees' && treeCount > 0) {
+            const realRate = totalRaw / treeCount;
+            document.getElementById('realRatePerTree').innerText = realRate.toFixed(2) + ' กก./ต้น';
+        }
+    }
+
+    // เรียกคำนวณครั้งแรก
+    calculate();
+</script>
+
+</body>
+</html>
